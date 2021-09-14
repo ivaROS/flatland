@@ -123,7 +123,7 @@ void SimulationManager::Main() {
   }
 
   // loading layers whenever /map is published, but callback only running when train mode on AND random map used as map_file
-  ros::NodeHandle n;
+  ros::NodeHandle n("~");
   ros::Subscriber goal_sub = n.subscribe("/map", 1, &SimulationManager::callback, this);
 
   while (ros::ok() && run_simulator_) {
@@ -145,7 +145,7 @@ void SimulationManager::Main() {
       world_->Update(timekeeper);  // Step physics by ros cycle time
       pre_run_steps = fmax(--pre_run_steps, 0);
     }
- 
+
     if (show_viz_ && update_viz) {
       world_->DebugVisualize(false);  // no need to update layer
       DebugVisualization::Get().Publish(
@@ -207,7 +207,7 @@ bool SimulationManager::callback_StepWorld(
     if(request == flatland_msgs::StepWorldRequest{})
     {
       required_steps = 1;
-    }else 
+    }else
     {
       required_steps = ceil(t/step_size_);
     };

@@ -80,16 +80,17 @@ int main(int argc, char **argv) {
 
   // Load parameters
   std::string world_path;  // The file path to the world.yaml file
-  if (!node_handle.getParam("/world_path", world_path)) {
+  if (!node_handle.getParam("world_path", world_path)) {
     ROS_FATAL_NAMED("Node", "No world_path parameter given!");
     ros::shutdown();
     return 1;
   }
   std::string map_layer_path;
-  node_handle.getParam("/map_layer_path", map_layer_path);
+
+  node_handle.getParam("map_layer_path", map_layer_path);
 
   std::string map_file;
-  node_handle.getParam("/map_file", map_file);
+  node_handle.getParam("map_file", map_file);
 
   float update_rate = 200.0;  // The physics update rate (Hz)
   node_handle.getParam("/update_rate", update_rate);
