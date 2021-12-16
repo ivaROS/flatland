@@ -33,8 +33,6 @@ namespace flatland_plugins {
         // the body collide with other objects, then inverse the linear velocity
         float vel = v_linear.Length();
         if (vel < 0.7 * linear_velocity_ && counter_ >= 50) {
-            ROS_INFO_STREAM("Old: " << v_linear.x << " - " << v_linear.y);
-
             ang_vel_current_ += M_PI / 2;
 
             if (ang_vel_current_ > 2 * M_PI) {
