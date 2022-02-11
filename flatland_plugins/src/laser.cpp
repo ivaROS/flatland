@@ -73,7 +73,7 @@ void Laser::OnInitialize(const YAML::Node &config) {
   m_body_to_laser_ << c, -s, x, s, c, y, 0, 0, 1;
 
   unsigned int num_laser_points =
-      std::lround((max_angle_ - min_angle_) / increment_) + 1;
+      std::lround((max_angle_ - min_angle_) / increment_);
 
   // initialize size for the matrix storing the laser points
   m_laser_points_ = Eigen::MatrixXf(3, num_laser_points);
