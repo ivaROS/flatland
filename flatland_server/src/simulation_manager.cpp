@@ -232,7 +232,8 @@ bool SimulationManager::callback_StepWorld(
 void SimulationManager::callback(nav_msgs::OccupancyGrid msg) {
 // void SimulationManager::callback(geometry_msgs::PoseStamped msg) {
 // void SimulationManager::callback(const std_msgs::String::ConstPtr& msg) {
-  if (train_mode_ && map_file_ == "random_map"){
+  // if (train_mode_ && map_file_ == "random_map"){
+  if (map_file_ == "random_map"){
     YamlReader world_reader = YamlReader(map_layer_yaml_file_);
     YamlReader layers_reader = world_reader.Subnode("layers", YamlReader::LIST);
 
