@@ -25,7 +25,7 @@ void PedsimMovement::OnInitialize(const YAML::Node &config){
     init_ = true;
 
     std::string path = ros::package::getPath("arena-simulation-setup");
-    YAML::Node config1 = YAML::LoadFile(path+"/advanced_configs.yaml");
+    YAML::Node config1 = YAML::LoadFile(path+"/configs/advanced_configs.yaml");
     human_radius=0.4;
     mv = 1.5;
     av =1.5;
@@ -34,7 +34,7 @@ void PedsimMovement::OnInitialize(const YAML::Node &config){
     if (config1["use danger zone"].as<float>()== 1.0) 
     {useDangerZone=true;}
 
-    safety_dist_config = YAML::LoadFile(ros::package::getPath("arena-simulation-setup") + "/saftey_distance_parameter_none.yaml");
+    safety_dist_config = YAML::LoadFile(ros::package::getPath("arena-simulation-setup") + "/configs/saftey_distance_parameter_none.yaml");
 
     // random generator to generate leg_offset, step_length with variance.
     std::random_device r;
@@ -292,7 +292,7 @@ void PedsimMovement::resetLegPosition(float32 x, float32 y, float32 angle){
 }
 
 void PedsimMovement::agentCallback(const pedsim_msgs::AgentStatesConstPtr& agents){
-    std::cout << "CALLBAKC RECEIVED" << std::endl;
+    // std::cout << "CALLBAKC RECEIVED" << std::endl;
     agentCallbackReceived = true;
     agents_ = agents;
 }
