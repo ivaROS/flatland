@@ -71,7 +71,7 @@ void VehicleMovement::BeforePhysicsStep(const Timekeeper &timekeeper) {
     YAML::Node config = YAML::LoadFile(path+"/configs/saftey_distance_parameter_none.yaml");
     // get agents ID via namespace
     std::string ns_str = GetModel()->GetNameSpace();
-    int id_ = std::stoi(ns_str.substr(13, ns_str.length()));
+    std::string id_ = ns_str;
 
 
     //Find appropriate agent in list
@@ -82,7 +82,7 @@ void VehicleMovement::BeforePhysicsStep(const Timekeeper &timekeeper) {
             break;
         }
         if (i == agents_->agent_states.size() - 1) {
-            ROS_WARN("Couldn't find agent: %d", id_);
+            ROS_WARN("Couldn't find agent: %s", id_.c_str());
             return;
         }
     };
