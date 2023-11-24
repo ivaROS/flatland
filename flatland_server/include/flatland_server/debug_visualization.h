@@ -68,6 +68,7 @@ struct DebugTopic {
 class DebugVisualization {
  private:
   DebugVisualization();
+  int verbosity;
 
  public:
   std::map<std::string, DebugTopic> topics_;

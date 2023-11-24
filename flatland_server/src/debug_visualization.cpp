@@ -58,6 +58,8 @@ namespace flatland_server {
 DebugVisualization::DebugVisualization() : node_("~debug") {
   topic_list_publisher_ =
       node_.advertise<flatland_msgs::DebugTopicList>("topics", 0, true);
+
+  node_.param<int>("verbosity", verbosity, 2);
 }
 
 DebugVisualization& DebugVisualization::Get() {
@@ -70,7 +72,7 @@ void DebugVisualization::JointToMarkers(
     float b, float a) {
   if (joint->GetType() == e_distanceJoint ||
       joint->GetType() == e_pulleyJoint || joint->GetType() == e_mouseJoint) {
-    ROS_ERROR_NAMED("DebugVis",
+    if(verbosity >= 2) ROS_ERROR_NAMED("DebugVis",
                     "Unimplemented visualization joints. See b2World.cpp for "
                     "implementation");
     return;
@@ -202,7 +204,7 @@ void DebugVisualization::BodyToMarkers(visualization_msgs::MarkerArray& markers,
       } break;
 
       default:  // Unsupported shape
-        ROS_WARN_THROTTLE_NAMED(1.0, "DebugVis", "Unsupported Box2D shape %d",
+        if(verbosity >= 2) ROS_WARN_THROTTLE_NAMED(1.0, "DebugVis", "Unsupported Box2D shape %d",
                                 static_cast<int>(fixture->GetType()));
         fixture = fixture->GetNext();
         continue;  // Do not add broken marker
@@ -242,7 +244,7 @@ void DebugVisualization::Publish(const Timekeeper& timekeeper) {
 
   if (to_delete.size() > 0) {
     for (const auto& topic : to_delete) {
-      ROS_WARN_NAMED("DebugVis", "Deleting topic %s", topic.c_str());
+      if(verbosity >= 2) ROS_WARN_NAMED("DebugVis", "Deleting topic %s", topic.c_str());
       topics_.erase(topic);
     }
     PublishTopicList();
@@ -349,7 +351,7 @@ void DebugVisualization::AddTopicIfNotExist(const std::string& name) {
         node_.advertise<visualization_msgs::MarkerArray>(name, 0, true), true,
         visualization_msgs::MarkerArray()};
 
-    ROS_INFO_ONCE_NAMED("DebugVis", "Visualizing %s", name.c_str());
+    if(verbosity >= 1) ROS_INFO_ONCE_NAMED("DebugVis", "Visualizing %s", name.c_str());
     PublishTopicList();
   }
 }
