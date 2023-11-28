@@ -111,19 +111,14 @@ void PedsimMovement::updateSafetyDistance(){
     set_safety_dist_footprint(safety_dist_b2body_, safety_dist_);
 }
 
-int PedsimMovement::GetAgent(int agentId, pedsim_msgs::AgentState &agent) {
-    for (int i = 0; i < agents_->agent_states.size(); i++){
-        pedsim_msgs::AgentState p = agents_->agent_states[i];
+int PedsimMovement::GetAgent(std::string agentId, pedsim_msgs::AgentState &agent) {
+    for (auto& p : agents_->agent_states){
         if (p.id == agentId){
             agent = p;
             return 0;
         }
-
-        if (i == agents_->agent_states.size() - 1)
-        {
-            ROS_WARN("Couldn't find Human agent: %d", agentId);
-        }
     }
+    ROS_WARN("Couldn't find Human agent: %s", agentId.c_str());
     return -1;
 }
 
@@ -136,7 +131,7 @@ void PedsimMovement::BeforePhysicsStep(const Timekeeper &timekeeper) {
     
     // get agents ID via namespace
     std::string ns_str = GetModel()->GetNameSpace();
-    int id_ = std::stoi(ns_str.substr(13, ns_str.length()));
+    std::string id_ = ns_str;
 
     //Find appropriate agent in list
     for (int i = 0; i < (int) agents_->agent_states.size(); i++){
@@ -146,7 +141,7 @@ void PedsimMovement::BeforePhysicsStep(const Timekeeper &timekeeper) {
             break;
         }
         if (i == agents_->agent_states.size() - 1) {
-            ROS_WARN("Couldn't find agent: %d", id_);
+            ROS_WARN("Couldn't find agent: %s", id_.c_str());
             return;
         }
     };
