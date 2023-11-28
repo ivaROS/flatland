@@ -287,7 +287,7 @@ void PedsimMovement::resetLegPosition(float32 x, float32 y, float32 angle){
 }
 
 void PedsimMovement::agentCallback(const pedsim_msgs::AgentStatesConstPtr& agents){
-    std::cout << "CALLBAKC RECEIVED" << std::endl;
+    // std::cout << "CALLBAKC RECEIVED" << std::endl;
     agentCallbackReceived = true;
     agents_ = agents;
 }
