@@ -195,17 +195,17 @@ void SimulationManager::Shutdown() {
 
 void SimulationManager::callback_StepWorld(
     flatland_msgs::StepWorld msg) {
-  int required_steps;
-  float t = msg.required_time;
-  if(t == 0.0) {
-    required_steps = 1;
-  } else {
-    required_steps = ceil(t/step_size_);
-  }
+  double t = msg.required_time;
+
+  if(t <= 0.0) {
+    t = step_size_;
+  } 
+
+  timekeeper.SetMaxStepSize(t);
   
-  for (int i = 0; i < required_steps; i++) {
-    world_->Update(timekeeper);  // Step physics by ros cycle time
-  }
+  world_->Update(timekeeper); 
+
+  timekeeper.SetMaxStepSize(step_size_);
 
   last_update_time_ = ros::WallTime::now().toSec();
 }
