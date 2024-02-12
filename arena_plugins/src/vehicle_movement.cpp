@@ -21,7 +21,7 @@ void VehicleMovement::OnInitialize(const YAML::Node &config){
 
     //get parameters
     flatland_server::YamlReader reader(config);
-    std::string path = ros::package::getPath("arena-simulation-setup");
+    std::string path = ros::package::getPath("arena_simulation_setup");
     YAML::Node config1 = YAML::LoadFile(path+"/configs/advanced_configs.yaml");
     human_radius=0.4;
     mv = 1.5;
@@ -67,7 +67,7 @@ void VehicleMovement::BeforePhysicsStep(const Timekeeper &timekeeper) {
     }
       
     
-    std::string path = ros::package::getPath("arena-simulation-setup");
+    std::string path = ros::package::getPath("arena_simulation_setup");
     YAML::Node config = YAML::LoadFile(path+"/configs/saftey_distance_parameter_none.yaml");
     // get agents ID via namespace
     std::string ns_str = GetModel()->GetNameSpace();
