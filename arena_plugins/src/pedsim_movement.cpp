@@ -150,13 +150,13 @@ void PedsimMovement::BeforePhysicsStep(const Timekeeper &timekeeper) {
     vel_y = person.twist.linear.y; // 
     vel = sqrt(vel_x*vel_x+vel_y*vel_y);
     //change visualization of the human if they are talking
-    safety_dist_= safety_dist_config["safety distance factor"][person.social_state].as<float>() * safety_dist_config["human obstacle safety distance radius"][person.type].as<float>();
+    safety_dist_= safety_dist_config["safety distance factor"][person.social_state].as<float>(1.) * safety_dist_config["human obstacle safety distance radius"][person.type].as<float>(1.);
 
     c=Color(  0.26, 0.3, 0, safety_dist_body_alpha) ;
-    if ( safety_dist_config["safety distance factor"][person.social_state].as<float>() > 1.2  ){
+    if ( safety_dist_config["safety distance factor"][person.social_state].as<float>(1.) > 1.2  ){
             c=Color(0.93, 0.16, 0.16, safety_dist_body_alpha);
     }
-    else if(safety_dist_config["safety distance factor"][person.social_state].as<float>() < 0.89){  
+    else if(safety_dist_config["safety distance factor"][person.social_state].as<float>(1.) < 0.89){  
             c=Color(  0.16, 0.93, 0.16, safety_dist_body_alpha) ;
     }
     if(useDangerZone==false){
