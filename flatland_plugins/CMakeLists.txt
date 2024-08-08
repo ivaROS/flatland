@@ -73,6 +73,7 @@ add_library(flatland_plugins_lib
   src/tricycle_drive.cpp
   src/diff_drive.cpp
   src/holo.cpp
+  src/holo_second_order.cpp
   src/model_tf_publisher.cpp
   src/update_timer.cpp
   src/bumper.cpp

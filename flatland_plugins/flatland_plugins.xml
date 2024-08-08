@@ -11,6 +11,9 @@
   <class type="flatland_plugins::Holo" base_class_type="flatland_server::ModelPlugin">
     <description>Flatland holonomic plugin</description>
   </class>
+  <class type="flatland_plugins::HoloSecondOrder" base_class_type="flatland_server::ModelPlugin">
+    <description>Flatland holonomic second order plugin</description>
+  </class>  
   <class type="flatland_plugins::ModelTfPublisher" base_class_type="flatland_server::ModelPlugin">
     <description>Publish body transformations</description>
   </class>
