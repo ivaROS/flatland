@@ -291,6 +291,9 @@ void HoloSecondOrder::BeforePhysicsStep(const Timekeeper& timekeeper) {
   b2Vec2 linear_cmd_vel_local_frame(twist_des_msg_.linear.x, twist_des_msg_.linear.y);
   float angular_cmd_vel_local_frame = twist_des_msg_.angular.z;
 
+  ROS_INFO_STREAM("linear_cmd_vel_local_frame: " << linear_cmd_vel_local_frame.x << ", " << linear_cmd_vel_local_frame.y);
+  ROS_INFO_STREAM("angular_cmd_vel_local_frame: " << angular_cmd_vel_local_frame);
+
   // Proportional term
   float error_x = linear_cmd_vel_local_frame.x - linear_vel_local_frame_minus.x;
   float error_y = linear_cmd_vel_local_frame.y - linear_vel_local_frame_minus.y;
@@ -356,14 +359,6 @@ void HoloSecondOrder::BeforePhysicsStep(const Timekeeper& timekeeper) {
 
 
   /*
-
-  b2Vec2 test_linear_vel = b2body->GetLinearVelocity(); 
-
-  ROS_INFO_STREAM("test_linear_vel: " << test_linear_vel.x << ", " << test_linear_vel.y);
-
-  b2Vec2 linear_vel_des_local(twist_des_msg_.linear.x, twist_des_msg_.linear.y); // wrt robot
-  float angular_vel_des = twist_des_msg_.angular.z;  // wrt robot (angular is independent of frames)
-
   // Derivative control
   // float d_error_x_dt_k = (error_x - error_x_tmin1) / dt;
   // float d_error_y_dt_k = (error_y - error_y_tmin1) / dt;
