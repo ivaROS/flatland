@@ -63,7 +63,7 @@ void HoloSecondOrder::OnInitialize(const YAML::Node& config) {
   YamlReader reader(config);
   enable_odom_pub_ = reader.Get<bool>("enable_odom_pub", true);
   enable_twist_pub_ = reader.Get<bool>("enable_twist_pub", true);
-  enable_acc_pub_ = true; // hardcoding for now
+  enable_acc_pub_ = reader.Get<bool>("enable_acc_pub", true);
 
   std::string body_name = reader.Get<std::string>("body");
   std::string odom_frame_id = reader.Get<std::string>("odom_frame_id", "odom");
@@ -74,7 +74,7 @@ void HoloSecondOrder::OnInitialize(const YAML::Node& config) {
   std::string ground_truth_topic =
       reader.Get<std::string>("ground_truth_pub", "odometry/ground_truth");
   std::string twist_pub_topic = reader.Get<std::string>("twist_pub", "twist");
-  std::string acc_pub_topic = "acc"; // hardcoding for now
+  std::string acc_pub_topic = reader.Get<std::string>("acc_pub", "acc");
 
   // noise are in the form of linear x, linear y, angular variances
   std::vector<double> odom_twist_noise =
@@ -268,54 +268,75 @@ void HoloSecondOrder::BeforePhysicsStep(const Timekeeper& timekeeper) {
 
   b2Body* b2body = body_->physics_body_;
 
-  b2Vec2 position = b2body->GetPosition();
-  float angle = b2body->GetAngle();
-  b2Vec2 linear_vel_curr_local = b2body->GetLinearVelocityFromLocalPoint(b2Vec2(0, 0));
-  float angular_vel_curr = b2body->GetAngularVelocity();
+  b2Vec2 position = b2body->GetPosition(); // world frame
+  float angle = b2body->GetAngle(); // wrt world frame
 
-  b2Vec2 linear_vel_des_local(twist_des_msg_.linear.x, twist_des_msg_.linear.y);
-  float angular_vel_des = twist_des_msg_.angular.z;  // angular is independent of frames
+  ROS_INFO_STREAM("position: " << position.x << ", " << position.y);
+  ROS_INFO_STREAM("angle: " << angle);
 
-  float K_p_x = 10.0;
-  float K_p_y = 10.0;
-  float K_p_z = 10.0;
+  // wrt world frame
+  b2Vec2 linear_vel_world_frame_minus = b2body->GetLinearVelocityFromLocalPoint(b2Vec2(0, 0)); 
+  float angular_vel_world_frame_minus = b2body->GetAngularVelocity();
 
-  float K_d_x = 0.0; // 0.001;
-  float K_d_y = 0.0; // 0.001;
-  float K_d_z = 0.0; // 0.001;
+  ROS_INFO_STREAM("linear_vel_world_frame_minus: " << linear_vel_world_frame_minus.x << ", " << linear_vel_world_frame_minus.y);
+  ROS_INFO_STREAM("angular_vel_world_frame_minus: " << angular_vel_world_frame_minus);
+
+  // wrt body frame
+  b2Vec2 linear_vel_local_frame_minus = b2body->GetLocalVector(linear_vel_world_frame_minus);
+  float angular_vel_local_frame_minus = angular_vel_world_frame_minus;
+
+  ROS_INFO_STREAM("linear_vel_local_frame_minus: " << linear_vel_local_frame_minus.x << ", " << linear_vel_local_frame_minus.y);
+  ROS_INFO_STREAM("angular_vel_local_frame: " << angular_vel_local_frame_minus);
+
+  b2Vec2 linear_cmd_vel_local_frame(twist_des_msg_.linear.x, twist_des_msg_.linear.y);
+  float angular_cmd_vel_local_frame = twist_des_msg_.angular.z;
 
   // Proportional term
-  float error_x = linear_vel_des_local.x - linear_vel_curr_local.x;
-  float error_y = linear_vel_des_local.y - linear_vel_curr_local.y;
-  float error_theta = angular_vel_des - angular_vel_curr;
+  float error_x = linear_cmd_vel_local_frame.x - linear_vel_local_frame_minus.x;
+  float error_y = linear_cmd_vel_local_frame.y - linear_vel_local_frame_minus.y;
+  float error_theta = angular_cmd_vel_local_frame - angular_vel_local_frame_minus;
+
+  ROS_INFO_STREAM("error_x: " << error_x);
+  ROS_INFO_STREAM("error_y: " << error_y);
+  ROS_INFO_STREAM("error_theta: " << error_theta);
 
   ros::Time t_now = ros::Time::now();
   float dt = (t_now - t_prev).toSec() + 1e-10;
-  
-  // Derivative control
-  // float d_error_x_dt_k = (error_x - error_x_tmin1) / dt;
-  // float d_error_y_dt_k = (error_y - error_y_tmin1) / dt;
-  // float d_error_theta_dt_k = (error_theta - error_theta_tmin1) / dt;
+  ROS_INFO_STREAM("dt: " << dt);
 
   // Calculate acceleration
   a_x = (K_p_x * error_x); //  + (K_d_x * d_error_x_dt_k);
   a_y = (K_p_y * error_y); // + (K_d_y * d_error_y_dt_k);
   a_theta = (K_p_z * error_theta); // + (K_d_z * d_error_theta_dt_k);
 
-  // Update velocity
-  // Kind of weird, updating velocity before position 
+  // Bounding acceleration
+  a_x = std::max(-linear_acc_lim, std::min(linear_acc_lim, a_x));
+  a_y = std::max(-linear_acc_lim, std::min(linear_acc_lim, a_y));
+  a_theta = std::max(-angular_acc_lim, std::min(angular_acc_lim, a_theta)); 
 
-  b2Vec2 linear_vel_local = linear_vel_curr_local;
-  linear_vel_local.x += (a_x * dt);
-  linear_vel_local.y += (a_y * dt);
+  ROS_INFO_STREAM("a_x: " << a_x);
+  ROS_INFO_STREAM("a_y: " << a_y);
+  ROS_INFO_STREAM("a_theta: " << a_theta);
 
-  float angular_vel = angular_vel_curr;
-  angular_vel += (a_theta * dt);
+  // update velocity
+  b2Vec2 linear_vel_local_frame_plus = linear_vel_local_frame_minus;
+  linear_vel_local_frame_plus.x += (a_x * dt);
+  linear_vel_local_frame_plus.y += (a_y * dt);
+
+  float angular_vel_local_frame_plus = angular_vel_local_frame_minus;
+  angular_vel_local_frame_plus += (a_theta * dt);
+
+  ROS_INFO_STREAM("linear_vel_local_frame_plus: " << linear_vel_local_frame_plus.x << ", " << linear_vel_local_frame_plus.y);
+  ROS_INFO_STREAM("angular_vel_local_frame_plus: " << angular_vel_local_frame_plus);
 
   // we apply the twist velocities, this must be done every physics step to make
   // sure Box2D solver applies the correct velocity through out. The velocity
   // given in the twist message should be in the local frame
-  b2Vec2 linear_vel = b2body->GetWorldVector(linear_vel_local);
+  b2Vec2 linear_vel = b2body->GetWorldVector(linear_vel_local_frame_plus);
+  float angular_vel = angular_vel_local_frame_plus;  // angular is independent of frames
+
+  ROS_INFO_STREAM("linear_vel: " << linear_vel.x << ", " << linear_vel.y);
+  ROS_INFO_STREAM("angular_vel: " << angular_vel);
 
   // we want the velocity vector in the world frame at the center of mass
 
@@ -328,15 +349,38 @@ void HoloSecondOrder::BeforePhysicsStep(const Timekeeper& timekeeper) {
   b2Vec2 r = b2body->GetWorldCenter() - position;
   b2Vec2 linear_vel_cm = linear_vel + angular_vel * b2Vec2(-r.y, r.x);
 
-  // apply acceleration
-
   b2body->SetLinearVelocity(linear_vel_cm);
   b2body->SetAngularVelocity(angular_vel);
 
   t_prev = t_now;
+
+
+  /*
+
+  b2Vec2 test_linear_vel = b2body->GetLinearVelocity(); 
+
+  ROS_INFO_STREAM("test_linear_vel: " << test_linear_vel.x << ", " << test_linear_vel.y);
+
+  b2Vec2 linear_vel_des_local(twist_des_msg_.linear.x, twist_des_msg_.linear.y); // wrt robot
+  float angular_vel_des = twist_des_msg_.angular.z;  // wrt robot (angular is independent of frames)
+
+  // Derivative control
+  // float d_error_x_dt_k = (error_x - error_x_tmin1) / dt;
+  // float d_error_y_dt_k = (error_y - error_y_tmin1) / dt;
+  // float d_error_theta_dt_k = (error_theta - error_theta_tmin1) / dt;
+
+  // Update velocity
+  // Kind of weird, updating velocity before position 
+
+  // we apply the twist velocities, this must be done every physics step to make
+  // sure Box2D solver applies the correct velocity through out. The velocity
+  // given in the twist message should be in the local frame
+  b2Vec2 linear_vel = b2body->GetWorldVector(linear_vel_local);
+
   error_x_tmin1 = error_x;
   error_y_tmin1 = error_y;
   error_theta_tmin1 = error_theta;
+  */
 }
 }
 

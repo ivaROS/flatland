@@ -81,6 +81,17 @@ class HoloSecondOrder : public flatland_server::ModelPlugin {
   float a_x, a_y, a_theta;
   float error_x_tmin1, error_y_tmin1, error_theta_tmin1;
   
+  float K_p_x = 5.0; // 10.0;
+  float K_p_y = 5.0; // 10.0;
+  float K_p_z = 5.0; // 10.0;
+
+  float K_d_x = 0.0; // 0.001;
+  float K_d_y = 0.0; // 0.001;
+  float K_d_z = 0.0; // 0.001;
+
+  float linear_acc_lim = 2.5; // pulling from yaml, not sure if there's a good way to set it otherwise
+  float angular_acc_lim = 3.2; // pulling from yaml, not sure if there's a good way to set it otherwise
+  
   ros::Time t_prev;
 
   std::default_random_engine rng_;
