@@ -84,6 +84,8 @@ void HoloSecondOrder::OnInitialize(const YAML::Node& config) {
 
   double pub_rate =
       reader.Get<double>("pub_rate", std::numeric_limits<double>::infinity());
+
+  // ROS_INFO_STREAM("pub_rate: " << pub_rate);
   update_timer_.SetRate(pub_rate);
 
   // by default the covariance diagonal is the variance of actual noise
@@ -221,7 +223,7 @@ void HoloSecondOrder::AfterPhysicsStep(const Timekeeper& timekeeper) {
       // Transform global frame velocity into local frame to simulate encoder
       // readings
       geometry_msgs::TwistStamped twist_pub_msg;
-      twist_pub_msg.header.stamp = timekeeper.GetSimTime();
+      twist_pub_msg.header.stamp = odom_msg_.header.stamp;
       twist_pub_msg.header.frame_id = odom_msg_.child_frame_id;
 
       // Forward velocity in twist.linear.x
@@ -241,7 +243,7 @@ void HoloSecondOrder::AfterPhysicsStep(const Timekeeper& timekeeper) {
 
     if (enable_acc_pub_) {
       geometry_msgs::TwistStamped acc_pub_msg;
-      acc_pub_msg.header.stamp = timekeeper.GetSimTime();
+      acc_pub_msg.header.stamp = odom_msg_.header.stamp;
       acc_pub_msg.header.frame_id = odom_msg_.child_frame_id;
 
       acc_pub_msg.twist.linear.x = a_x;
@@ -294,34 +296,14 @@ void HoloSecondOrder::BeforePhysicsStep(const Timekeeper& timekeeper) {
   ROS_INFO_STREAM("linear_cmd_vel_local_frame: " << linear_cmd_vel_local_frame.x << ", " << linear_cmd_vel_local_frame.y);
   ROS_INFO_STREAM("angular_cmd_vel_local_frame: " << angular_cmd_vel_local_frame);
 
-  // Proportional term
-  float error_x = linear_cmd_vel_local_frame.x - linear_vel_local_frame_minus.x;
-  float error_y = linear_cmd_vel_local_frame.y - linear_vel_local_frame_minus.y;
-  float error_theta = angular_cmd_vel_local_frame - angular_vel_local_frame_minus;
-
-  ROS_INFO_STREAM("error_x: " << error_x);
-  ROS_INFO_STREAM("error_y: " << error_y);
-  ROS_INFO_STREAM("error_theta: " << error_theta);
-
+  /////////////////////
+  // UPDATE VELOCITY //
+  /////////////////////
+  
   ros::Time t_now = ros::Time::now();
   float dt = (t_now - t_prev).toSec() + 1e-10;
   ROS_INFO_STREAM("dt: " << dt);
 
-  // Calculate acceleration
-  a_x = (K_p_x * error_x); //  + (K_d_x * d_error_x_dt_k);
-  a_y = (K_p_y * error_y); // + (K_d_y * d_error_y_dt_k);
-  a_theta = (K_p_z * error_theta); // + (K_d_z * d_error_theta_dt_k);
-
-  // Bounding acceleration
-  a_x = std::max(-linear_acc_lim, std::min(linear_acc_lim, a_x));
-  a_y = std::max(-linear_acc_lim, std::min(linear_acc_lim, a_y));
-  a_theta = std::max(-angular_acc_lim, std::min(angular_acc_lim, a_theta)); 
-
-  ROS_INFO_STREAM("a_x: " << a_x);
-  ROS_INFO_STREAM("a_y: " << a_y);
-  ROS_INFO_STREAM("a_theta: " << a_theta);
-
-  // update velocity
   b2Vec2 linear_vel_local_frame_plus = linear_vel_local_frame_minus;
   linear_vel_local_frame_plus.x += (a_x * dt);
   linear_vel_local_frame_plus.y += (a_y * dt);
@@ -354,6 +336,33 @@ void HoloSecondOrder::BeforePhysicsStep(const Timekeeper& timekeeper) {
 
   b2body->SetLinearVelocity(linear_vel_cm);
   b2body->SetAngularVelocity(angular_vel);
+
+  /////////////////////////
+  // UPDATE ACCELERATION //
+  /////////////////////////
+
+  // Proportional term
+  float error_x = linear_cmd_vel_local_frame.x - linear_vel_local_frame_minus.x;
+  float error_y = linear_cmd_vel_local_frame.y - linear_vel_local_frame_minus.y;
+  float error_theta = angular_cmd_vel_local_frame - angular_vel_local_frame_minus;
+
+  ROS_INFO_STREAM("error_x: " << error_x);
+  ROS_INFO_STREAM("error_y: " << error_y);
+  ROS_INFO_STREAM("error_theta: " << error_theta);
+
+  // Calculate acceleration
+  a_x = (K_p_x * error_x); //  + (K_d_x * d_error_x_dt_k);
+  a_y = (K_p_y * error_y); // + (K_d_y * d_error_y_dt_k);
+  a_theta = (K_p_z * error_theta); // + (K_d_z * d_error_theta_dt_k);
+
+  // Bounding acceleration
+  a_x = std::max(-linear_acc_lim, std::min(linear_acc_lim, a_x));
+  a_y = std::max(-linear_acc_lim, std::min(linear_acc_lim, a_y));
+  a_theta = std::max(-angular_acc_lim, std::min(angular_acc_lim, a_theta)); 
+
+  ROS_INFO_STREAM("a_x: " << a_x);
+  ROS_INFO_STREAM("a_y: " << a_y);
+  ROS_INFO_STREAM("a_theta: " << a_theta);
 
   t_prev = t_now;
 

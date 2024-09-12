@@ -78,8 +78,12 @@ class HoloSecondOrder : public flatland_server::ModelPlugin {
   bool enable_twist_pub_;  ///< YAML parameter to enable twist publishing
   bool enable_acc_pub_;  ///< YAML parameter to enable twist publishing
 
-  float a_x, a_y, a_theta;
-  float error_x_tmin1, error_y_tmin1, error_theta_tmin1;
+  float a_x = 0.0;
+  float a_y = 0.0;
+  float a_theta = 0.0;
+  float error_x_tmin1 = 0.0;
+  float error_y_tmin1 = 0.0;
+  float error_theta_tmin1 = 0.0; 
   
   float K_p_x = 5.0; // 10.0;
   float K_p_y = 5.0; // 10.0;
